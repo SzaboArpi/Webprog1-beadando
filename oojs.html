@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OOJS Menü</title>
+    <script src="oojs.js"></script>
+</head>
+<body>
+
+<script>
+    let menu = new ColoredMenu("Főmenü", 500, 70, "lightblue");
+</script>
+
+<h3>Menü vezérlés</h3>
+<p>Adjon a Főmenü-hoz új menüpontokat!</p>
+
+<button onclick="menu.show()">Mutat</button>
+<button onclick="menu.hide()">Elrejt</button>
+
+<br><br>
+
+<input type="text" id="itemText" placeholder="Új menüpont">
+<button onclick="menu.addItem(itemText.value)">Hozzáadás</button>
+
+<br><br>
+
+<input type="text" id="x" placeholder="X">
+<input type="text" id="y" placeholder="Y">
+<button onclick="menu.moveTo(x.value, y.value)">Mozgatás</button>
+
+</body>
+</html>

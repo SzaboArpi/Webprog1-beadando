@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>React CRUD Menü</title>
+
+    <!-- React CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel">
+
+// KEZDŐ ADATOK (szalloda.txt alapján)
+const initialData = [
+    { az: "BS", nev: "Baron Resort", besorolas: 5 },
+    { az: "CL", nev: "Charm Life", besorolas: 3 },
+    { az: "CP", nev: "Cesar Palace", besorolas: 5 },
+    { az: "CW", nev: "Caribbean World Soma Bay", besorolas: 5 }
+];
+
+function App() {
+    const [data, setData] = React.useState(initialData);
+    const [newName, setNewName] = React.useState("");
+    const [newRating, setNewRating] = React.useState("");
+
+    // CREATE
+    const addItem = () => {
+        const newItem = {
+            az: Math.random().toString(36).substring(2,5),
+            nev: newName,
+            besorolas: parseInt(newRating)
+        };
+        setData([...data, newItem]);
+        setNewName("");
+        setNewRating("");
+    };
+
+    // DELETE
+    const deleteItem = (az) => {
+        setData(data.filter(item => item.az !== az));
+    };
+
+    // UPDATE
+    const updateItem = (az) => {
+        const newNev = prompt("Új név:");
+        if (!newNev) return;
+
+        setData(data.map(item =>
+            item.az === az ? {...item, nev: newNev} : item
+        ));
+    };
+
+    return (
+        <div style={{padding: "20px"}}>
+
+            <h2>Szállodák (CRUD)</h2>
+
+            {/* CREATE */}
+            <input 
+                placeholder="Név"
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+            />
+            <input 
+                placeholder="Besorolás"
+                value={newRating}
+                onChange={e => setNewRating(e.target.value)}
+            />
+            <button onClick={addItem}>Hozzáadás</button>
+
+            <hr/>
+
+            {/* READ */}
+            <table border="1" cellPadding="5">
+                <thead>
+                    <tr>
+                        <th>Az</th>
+                        <th>Név</th>
+                        <th>Besorolás</th>
+                        <th>Műveletek</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {data.map(item => (
+                        <tr key={item.az}>
+                            <td>{item.az}</td>
+                            <td>{item.nev}</td>
+                            <td>{item.besorolas}</td>
+                            <td>
+                                <button onClick={() => updateItem(item.az)}>Szerkeszt</button>
+                                <button onClick={() => deleteItem(item.az)}>Töröl</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+
+        </div>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+</script>
+
+</body>
+</html>

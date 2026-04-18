@@ -2,15 +2,19 @@ body{
     background-color: #d1cdcd;
     color: darkblue ;
 }
-
+header, h1{
+    font-style: bold;
+    background-color: #51cbff;
+    color:white;
+}
 div.content {
     padding: "20px";
     font-family: "Arial"
 }
 
-h1,h3{
+h3{
     font-style: bold;
-    text-decoration: underline;
+    
 }
 table {
     border-collapse: collapse;

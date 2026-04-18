@@ -3,6 +3,11 @@ body{
     color: darkblue ;
 }
 
+div.content {
+    padding: "20px";
+    font-family: "Arial"
+}
+
 h1,h3{
     font-style: bold;
     text-decoration: underline;

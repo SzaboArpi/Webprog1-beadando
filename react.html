@@ -2,77 +2,140 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>React CRUD Menü</title>
+    <title>React CRUD Utazás</title>
 
-    <!-- React CDN -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 
 <body>
-
 <div id="root"></div>
 
 <script type="text/babel">
 
-// KEZDŐ ADATOK (szalloda.txt alapján)
-const initialData = [
-    { az: "BS", nev: "Baron Resort", besorolas: 5 },
-    { az: "CL", nev: "Charm Life", besorolas: 3 },
-    { az: "CP", nev: "Cesar Palace", besorolas: 5 },
-    { az: "CW", nev: "Caribbean World Soma Bay", besorolas: 5 }
+// HELYSÉGEK
+const helysegek = [
+    { az: 1, nev: "Sousse", orszag: "Tunézia" },
+    { az: 2, nev: "Djerba", orszag: "Tunézia" },
+    { az: 3, nev: "Sharm El Sheikh", orszag: "Egyiptom" },
+    { az: 4, nev: "Hurghada", orszag: "Egyiptom" }
+];
+
+// SZÁLLODÁK
+const initialHotels = [
+    { az: "BS", nev: "Baron Resort", besorolas: 5, helyseg_az: 3 },
+    { az: "CL", nev: "Charm Life", besorolas: 3, helyseg_az: 4 },
+    { az: "CP", nev: "Cesar Palace", besorolas: 5, helyseg_az: 2 },
+    { az: "CW", nev: "Caribbean World Soma Bay", besorolas: 5, helyseg_az: 4 }
+];
+
+// ÁRAK (rövidítve)
+const arak = [
+    { szalloda_az: "BS", ar: 244900 },
+    { szalloda_az: "CL", ar: 59900 },
+    { szalloda_az: "CP", ar: 97900 },
+    { szalloda_az: "CW", ar: 79900 }
 ];
 
 function App() {
-    const [data, setData] = React.useState(initialData);
-    const [newName, setNewName] = React.useState("");
-    const [newRating, setNewRating] = React.useState("");
+    const [hotels, setHotels] = React.useState(initialHotels);
+    const [search, setSearch] = React.useState("");
+    const [sort, setSort] = React.useState("");
+
+    const [newHotel, setNewHotel] = React.useState({
+        nev: "",
+        besorolas: "",
+        helyseg_az: 1
+    });
+
+    // HELYSÉG NÉV
+    const getHelyseg = (id) => {
+        const h = helysegek.find(x => x.az == id);
+        return h ? h.nev + " (" + h.orszag + ")" : "";
+    };
+
+    // ÁR
+    const getAr = (az) => {
+        const a = arak.find(x => x.szalloda_az === az);
+        return a ? a.ar : "nincs adat";
+    };
 
     // CREATE
-    const addItem = () => {
+    const addHotel = () => {
         const newItem = {
-            az: Math.random().toString(36).substring(2,5),
-            nev: newName,
-            besorolas: parseInt(newRating)
+            ...newHotel,
+            az: Math.random().toString(36).substring(2,5)
         };
-        setData([...data, newItem]);
-        setNewName("");
-        setNewRating("");
+        setHotels([...hotels, newItem]);
     };
 
     // DELETE
-    const deleteItem = (az) => {
-        setData(data.filter(item => item.az !== az));
+    const deleteHotel = (az) => {
+        setHotels(hotels.filter(h => h.az !== az));
     };
 
     // UPDATE
-    const updateItem = (az) => {
-        const newNev = prompt("Új név:");
-        if (!newNev) return;
+    const updateHotel = (az) => {
+        const newNev = prompt("Új szálloda név:");
+        const newBes = prompt("Új besorolás:");
 
-        setData(data.map(item =>
-            item.az === az ? {...item, nev: newNev} : item
+        setHotels(hotels.map(h =>
+            h.az === az ? {...h, nev: newNev, besorolas: newBes} : h
         ));
     };
 
-    return (
-        <div style={{padding: "20px"}}>
+    // SZŰRÉS
+    let filtered = hotels.filter(h =>
+        h.nev.toLowerCase().includes(search.toLowerCase()) ||
+        getHelyseg(h.helyseg_az).toLowerCase().includes(search.toLowerCase())
+    );
 
-            <h2>Szállodák (CRUD)</h2>
+    // RENDEZÉS
+    if (sort === "nev") {
+        filtered.sort((a,b) => a.nev.localeCompare(b.nev));
+    }
+    if (sort === "ar") {
+        filtered.sort((a,b) => getAr(a.az) - getAr(b.az));
+    }
+
+    return (
+        <div style={{padding: "20px", fontFamily: "Arial"}}>
+
+            <h2>Utazás</h2>
+
+            {/* KERESÉS */}
+            <input 
+                placeholder="Keresés..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+            />
+
+            {/* RENDEZÉS */}
+            <select onChange={e => setSort(e.target.value)}>
+                <option value="">Nincs rendezés</option>
+                <option value="nev">Név szerint</option>
+                <option value="ar">Ár szerint</option>
+            </select>
+
+            <hr/>
 
             {/* CREATE */}
-            <input 
-                placeholder="Név"
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
+            <h3>Új szálloda</h3>
+
+            <input placeholder="Szálloda neve"
+                onChange={e => setNewHotel({...newHotel, nev: e.target.value})}
             />
-            <input 
-                placeholder="Besorolás"
-                value={newRating}
-                onChange={e => setNewRating(e.target.value)}
+
+            <input placeholder="Besorolás"
+                onChange={e => setNewHotel({...newHotel, besorolas: e.target.value})}
             />
-            <button onClick={addItem}>Hozzáadás</button>
+
+            <input placeholder= "Város"
+                onChange={e => setNewHotel({...newHotel, helyseg_az: e.target.value})} 
+            />
+
+            <button onClick={addHotel}>Hozzáadás</button>
 
             <hr/>
 
@@ -80,21 +143,24 @@ function App() {
             <table border="1" cellPadding="5">
                 <thead>
                     <tr>
-                        <th>Az</th>
-                        <th>Név</th>
+                        <th>Szálloda neve</th>
                         <th>Besorolás</th>
+                        <th>Helyszín</th>
+                        <th>Ár</th>
                         <th>Műveletek</th>
                     </tr>
                 </thead>
+
                 <tbody>
-                    {data.map(item => (
-                        <tr key={item.az}>
-                            <td>{item.az}</td>
-                            <td>{item.nev}</td>
-                            <td>{item.besorolas}</td>
+                    {filtered.map(h => (
+                        <tr key={h.az}>
+                            <td>{h.nev}</td>
+                            <td>{h.besorolas}</td>
+                            <td>{getHelyseg(h.helyseg_az)}</td>
+                            <td>{getAr(h.az)} Ft</td>
                             <td>
-                                <button onClick={() => updateItem(item.az)}>Szerkeszt</button>
-                                <button onClick={() => deleteItem(item.az)}>Töröl</button>
+                                <button onClick={() => updateHotel(h.az)}>Szeksztés</button>
+                                <button onClick={() => deleteHotel(h.az)}>Törlés</button>
                             </td>
                         </tr>
                     ))}
@@ -108,6 +174,5 @@ function App() {
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 
 </script>
-
 </body>
 </html>

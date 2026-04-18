@@ -69,3 +69,12 @@ input{
     background-color: #edefee;
     color: #011046;
 }
+footer{
+    text-align: center;
+    padding: 1px;
+    margin-top:100px;   
+    margin-left: 0px;
+    margin-right: 0px;
+    background-color:#8884ff;
+    color: white;
+}

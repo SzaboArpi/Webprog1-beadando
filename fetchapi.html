@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fetch API + MySQL</title>
+</head>
+<body>
+
+<h2>Szállodák CRUD (MySQL)</h2>
+
+<input id="nev" placeholder="Név">
+<input id="bes" placeholder="Besorolás">
+<button onclick="addHotel()">Hozzáadás</button>
+
+<ul id="list"></ul>
+
+<script>
+
+const API = "http://localhost/api.php";
+
+// READ
+function loadData() {
+    fetch(API)
+        .then(res => res.json())
+        .then(data => {
+            const list = document.getElementById("list");
+            list.innerHTML = "";
+
+            data.forEach(h => {
+                const li = document.createElement("li");
+                li.innerHTML = `
+                    ${h.nev} (${h.besorolas})
+                    <button onclick="deleteHotel(${h.id})">Törlés</button>
+                    <button onclick="updateHotel(${h.id})">Szerkesztés</button>
+                `;
+                list.appendChild(li);
+            });
+        });
+}
+
+// CREATE
+function addHotel() {
+    fetch(API, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            nev: document.getElementById("nev").value,
+            besorolas: document.getElementById("bes").value
+        })
+    }).then(loadData);
+}
+
+// DELETE
+function deleteHotel(id) {
+    fetch(API + "?id=" + id, {
+        method: "DELETE"
+    }).then(loadData);
+}
+
+// UPDATE
+function updateHotel(id) {
+    const newNev = prompt("Új név:");
+    const newBes = prompt("Új besorolás:");
+
+    fetch(API + "?id=" + id, {
+        method: "PUT",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            nev: newNev,
+            besorolas: newBes
+        })
+    }).then(loadData);
+}
+
+loadData();
+
+</script>
+
+</body>
+</html>

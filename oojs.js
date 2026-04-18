@@ -9,7 +9,7 @@ class Menu {
         this.container.style.borderRadius= "15px";
         this.container.style.boxShadow = "2px 2px 10px gray";
 
-        this.title = document.createElement("h4");
+        this.title = document.createElement("h2");
         this.title.innerText = title;
         this.container.appendChild(this.title);
 

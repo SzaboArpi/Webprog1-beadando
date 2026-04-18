@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>CRUD alkalmazás</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 15px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Helységek CRUD</h1>
+
+<input type="text" id="nev" placeholder="Név">
+<input type="text" id="orszag" placeholder="Ország">
+<button onclick="createItem()">Hozzáadás</button>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Név</th>
+            <th>Ország</th>
+            <th>Műveletek</th>
+        </tr>
+    </thead>
+    <tbody id="lista"></tbody>
+</table>
+
+<script>
+let helysegek = [
+    { az: 1, nev: "Sousse", orszag: "Tunézia" },
+    { az: 2, nev: "Djerba", orszag: "Tunézia" },
+    { az: 3, nev: "Sharm El Sheikh", orszag: "Egyiptom" },
+    { az: 4, nev: "Hurghada", orszag: "Egyiptom" }
+];
+
+function render() {
+    const lista = document.getElementById("lista");
+    lista.innerHTML = "";
+
+    helysegek.forEach(item => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${item.az}</td>
+            <td>${item.nev}</td>
+            <td>${item.orszag}</td>
+            <td>
+                <button onclick="updateItem(${item.az})">Szerkeszt</button>
+                <button onclick="deleteItem(${item.az})">Törlés</button>
+            </td>
+        `;
+
+        lista.appendChild(tr);
+    });
+}
+
+function createItem() {
+    const nev = document.getElementById("nev").value;
+    const orszag = document.getElementById("orszag").value;
+
+    if (!nev || !orszag) return alert("Minden mezőt ki kell tölteni!");
+
+    const uj = {
+        az: helysegek.length ? Math.max(...helysegek.map(h => h.az)) + 1 : 1,
+        nev,
+        orszag
+    };
+
+    helysegek.push(uj);
+    render();
+}
+
+function updateItem(az) {
+    const item = helysegek.find(h => h.az === az);
+
+    const ujNev = prompt("Új név:", item.nev);
+    const ujOrszag = prompt("Új ország:", item.orszag);
+
+    if (ujNev && ujOrszag) {
+        item.nev = ujNev;
+        item.orszag = ujOrszag;
+        render();
+    }
+}
+
+function deleteItem(az) {
+    helysegek = helysegek.filter(h => h.az !== az);
+    render();
+}
+
+// Inicializálás
+render();
+</script>
+
+</body>
+</html>

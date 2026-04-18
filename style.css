@@ -3,7 +3,7 @@ body{
     color: #011046 ;
 }
 #menu h2{
-        background-color: rgb(119, 119, 253);
+        background-color:#8884ff;
         color: #e1efe6;
         padding: 5px;
 }
@@ -16,8 +16,8 @@ body{
     text-decoration: none;
 }
 #menu a:hover { 
-    background-color:rgb(61, 61, 188);
-    color:#e1efe6;
+    background-color: #c6d1d1;
+    color:#4c60f3;
 }
 
 #menu li{
@@ -26,9 +26,12 @@ body{
     padding: 3px;
 }
 header, h1{
+    background-color: rgb(119, 119, 253);
+    color: #e1efe6;
     font-style: bold;
-    background-color: #c6d1d1;
     text-align: center;
+    padding:1px;
+    text-decoration: underline;
 }
 div.content {
     padding: "20px";

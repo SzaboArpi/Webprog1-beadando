@@ -25,3 +25,8 @@ th, td {
  th {
     background: #eacbcb;
 }
+button{
+    background-color: #98bded;
+    color: darkblue ;
+    border-color: none;
+}

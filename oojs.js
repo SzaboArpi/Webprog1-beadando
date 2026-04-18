@@ -23,9 +23,9 @@ class Menu {
         this.container.style.visibility = "visible";
     }
 
-    hide() {
-        this.container.style.visibility = "hidden";
-    }
+    hide() { 
+   
+        this.container.style.visibility ="hidden"; }
 
     addItem(text) {
         let li = document.createElement("li");

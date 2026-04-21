@@ -7,26 +7,36 @@
 </head>
 <body>
 
-<script>
-    let menu = new ColoredMenu("Főmenü", 500, 100, "lightblue");
-</script>
-<header>
-<h1>Menü vezérlés</h1></header> 
-<p><strong>Adjon a Főmenü-hoz új menüpontokat</strong!></p>
+    <script>
+        let menu = new ColoredMenu("Főmenü", 500, 200, "lightblue");
+    </script>
+    <header>
+        <h1>Menü vezérlés</h1>
+    </header>
+    <nav>
+        <ul id="menu">
+            <li><a href="index.html">Főoldal</a></li>
+            <li><a href="javascript.html">JavaScript </a></li>
+            <li><a href="react.html"> React </a></li>
+            <li><a href="spa.html"> SPA </a></li>
+            <li><a href="oojs.html"  class="active"> OOJS</a></li>
+        </ul>
+    </nav>
+    <p><strong>Adjon a Főmenü-hoz új menüpontokat</strong!></p>
 
-<button onclick="menu.show()">Mutat</button>
-<button onclick="menu.hide()">Elrejt</button>
+    <button onclick="menu.show()">Mutat</button>
+    <button onclick="menu.hide()">Elrejt</button>
 
-<br><br>
+    <br><br>
 
-<input type="text" id="itemText" placeholder="Új menüpont">
-<button onclick="menu.addItem(itemText.value)">Hozzáadás</button>
+    <input type="text" id="itemText" placeholder="Új menüpont">
+    <button onclick="menu.addItem(itemText.value)">Hozzáadás</button>
 
-<br><br>
+    <br><br>
 
-<input type="text" id="x" placeholder="X">
-<input type="text" id="y" placeholder="Y">
-<button onclick="menu.moveTo(x.value, y.value)">Mozgatás</button>
+    <input type="text" id="x" placeholder="X">
+    <input type="text" id="y" placeholder="Y">
+    <button onclick="menu.moveTo(x.value, y.value)">Mozgatás</button>
 
 </body>
 </html>

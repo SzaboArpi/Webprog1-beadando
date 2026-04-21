@@ -2,25 +2,27 @@ body{
     background-color: #e1efe6;
     color: #011046 ;
 }
-#menu h2{
+nav{
         background-color:#8884ff;
         color: #e1efe6;
         padding: 5px;
 }
-#menu a{
+nav a{
     text-decoration: none;
     color: #c6d1d1;
 }
-.lu{
-    list-style: none;
-    text-decoration: none;
+nav a.active{
+    border-bottom:5px solid blue;
 }
-#menu a:hover { 
+nav a:hover { 
     background-color: #c6d1d1;
     color:#4c60f3;
 }
-
-#menu li{
+nav ul{
+    list-style: none;
+    text-decoration: none;
+}
+nav li{
     display: inline;
     color:aliceblue;
     padding: 3px;

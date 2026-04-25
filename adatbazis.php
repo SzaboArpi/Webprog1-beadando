@@ -2,10 +2,10 @@
 header('Content-Type: application/json');
 
 // --- Adatbázis kapcsolat ---
-$host = 'localhost';
-$db   = 'utazas';
-$user = 'root';
-$pass = '';
+$host = 'mysql.nethely.hu';
+$db   = 'utazas12';
+$user = 'utazas12';
+$pass = 'Webprog1-beadando';
 $charset = 'utf8';
 
 $dsn = "mysql:host=$host;dbname=$db;";

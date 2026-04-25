@@ -64,9 +64,6 @@ const primaryKeys = {
     szalloda: { name: 'az', auto: false }
 };
 
-// INIT
-document.addEventListener('DOMContentLoaded', loadTables);
-
 document.getElementById('tableSelect').addEventListener('change', (e) => {
     currentTable = e.target.value;
     currentPage = 1;
@@ -80,18 +77,37 @@ document.getElementById('searchInput').addEventListener('input', () => {
 
 // TABLE LISTA
 async function loadTables() {
-    const res = await fetch('adatbazis.php?tables=1');
-    const tables = await res.json();
+    try {
+        const res = await fetch('adatbazis.php?tables=1');
+        const tables = await res.json();
 
-    const select = document.getElementById('tableSelect');
+        if (tables.error) {
+            alert(tables.error);
+            return;
+        }
 
-    tables.forEach(t => {
-        const opt = document.createElement('option');
-        opt.value = t;
-        opt.textContent = t;
-        select.appendChild(opt);
-    });
+        const select = document.getElementById('tableSelect');
+
+        tables.forEach(table => {
+            const option = document.createElement('option');
+            option.value = table;
+            option.textContent = table;
+            select.appendChild(option);
+        });
+
+        // automatikus kiválasztás
+        if (tables.length > 0) {
+            select.value = tables[0];
+            currentTable = tables[0];
+            fetchData();
+        }
+
+    } catch (err) {
+        console.error('Hiba a táblák betöltésekor', err);
+    }
 }
+
+document.addEventListener('DOMContentLoaded', loadTables);
 
 // ADATOK
 async function fetchData() {

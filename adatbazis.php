@@ -1,186 +1,147 @@
 <?php
-header('Content-Type: application/json');
+header("Content-Type: application/json; charset=UTF-8");
 
-// --- Adatbázis kapcsolat ---
-$host = 'mysql.nethely.hu';
-$db   = 'utazas12';
-$user = 'utazas12';
-$pass = 'Webprog1-beadando';
-$charset = 'utf8';
+$host = "localhost";
+$db   = "utazas12";
+$user = "utazas12";
+$pass = "Webprog1-beadando";
 
-$dsn = "mysql:host=$host;dbname=$db;";
+$conn = new mysqli($host, $user, $pass, $db);
 
-try {
-    $pdo = new PDO($dsn, $user, $pass, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
-} catch (PDOException $e) {
-    echo json_encode(['error' => 'DB kapcsolat hiba']);
+if ($conn->connect_error) {
+    echo json_encode(["error" => "DB hiba"]);
     exit;
 }
 
-// --- Helper: bemenet JSON-ból ---
-function getJsonInput() {
-    return json_decode(file_get_contents("php://input"), true);
-}
+$conn->set_charset("utf8");
 
-// --- GET: táblák listája ---
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['tables'])) {
+// =========================
+// TÁBLÁK LISTÁZÁSA
+// =========================
+if (isset($_GET['tables'])) {
+    $result = $conn->query("SHOW TABLES");
 
-    try {
-        $stmt = $pdo->query("SHOW TABLES");
-        $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-        echo json_encode($tables);
-
-    } catch (PDOException $e) {
-        echo json_encode(['error' => 'Nem sikerült lekérni a táblákat']);
+    $tables = [];
+    while ($row = $result->fetch_array()) {
+        $tables[] = $row[0];
     }
 
+    echo json_encode($tables);
     exit;
 }
 
-// --- GET (READ) ---
-if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-
-    if (!isset($_GET['table'])) {
-        echo json_encode(['error' => 'Nincs tábla megadva']);
-        exit;
-    }
-
+// =========================
+// ADATOK LEKÉRÉSE
+// =========================
+if (isset($_GET['table'])) {
     $table = $_GET['table'];
 
-    // egyszerű védelem (csak betűk, számok, _)
-    if (!preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
-        echo json_encode(['error' => 'Érvénytelen tábla']);
-        exit;
+    $colsRes = $conn->query("SHOW COLUMNS FROM `$table`");
+
+    $columns = [];
+    while ($col = $colsRes->fetch_assoc()) {
+        $columns[] = $col['Field'];
     }
 
-    try {
-        // oszlopok lekérdezése
-        $stmt = $pdo->query("DESCRIBE `$table`");
-        $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
+    $dataRes = $conn->query("SELECT * FROM `$table`");
 
-        // adatok lekérdezése
-        $stmt = $pdo->query("SELECT * FROM `$table`");
-        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        echo json_encode([
-            'columns' => $columns,
-            'data' => $data
-        ]);
-
-    } catch (PDOException $e) {
-        echo json_encode(['error' => 'Lekérdezési hiba']);
+    $data = [];
+    while ($row = $dataRes->fetch_assoc()) {
+        $data[] = $row;
     }
 
+    echo json_encode([
+        "columns" => $columns,
+        "data" => $data
+    ]);
     exit;
 }
 
-// --- POST (CREATE / UPDATE) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// =========================
+// CREATE / UPDATE / DELETE
+// =========================
+$method = $_SERVER['REQUEST_METHOD'];
+$input = json_decode(file_get_contents("php://input"), true);
 
-    $input = getJsonInput();
+if (!$input) {
+    echo json_encode(["error" => "Nincs input"]);
+    exit;
+}
 
-    if (!isset($input['table'], $input['action'])) {
-        echo json_encode(['error' => 'Hiányzó adatok']);
-        exit;
-    }
+// =========================
+// CREATE / UPDATE
+// =========================
+if ($method === 'POST') {
 
     $table = $input['table'];
     $action = $input['action'];
 
-    // védelem
-    if (!preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
-        echo json_encode(['error' => 'Érvénytelen tábla']);
+    unset($input['table'], $input['action']);
+
+    // CREATE
+    if ($action === 'create') {
+
+        $cols = [];
+        $vals = [];
+
+        foreach ($input as $col => $val) {
+            $cols[] = "`$col`";
+            $vals[] = "'" . $conn->real_escape_string($val) . "'";
+        }
+
+        $colStr = implode(",", $cols);
+        $valStr = implode(",", $vals);
+
+        $sql = "INSERT INTO `$table` ($colStr) VALUES ($valStr)";
+        $conn->query($sql);
+
+        echo json_encode(["success" => true]);
         exit;
     }
 
-    // mezők kigyűjtése (id, table, action kivéve)
-    $fields = [];
-    foreach ($input as $key => $value) {
-        if (!in_array($key, ['table', 'action', 'id'])) {
-            $fields[$key] = $value;
+    // UPDATE
+    if ($action === 'update') {
+
+        // frontend küldi
+        $pk = $input['pk'];
+        $id = $input[$pk];
+
+        unset($input[$pk]);
+        unset($input['pk']);
+
+        $updates = [];
+
+        foreach ($input as $col => $val) {
+            $val = $conn->real_escape_string($val);
+            $updates[] = "`$col`='$val'";
         }
+
+        $updateStr = implode(",", $updates);
+
+        $sql = "UPDATE `$table` SET $updateStr WHERE `$pk`='$id'";
+        $conn->query($sql);
+
+        echo json_encode(["success" => true]);
+        exit;
     }
-
-    try {
-
-        // --- CREATE ---
-        if ($action === 'create') {
-
-            $cols = implode(',', array_keys($fields));
-            $placeholders = ':' . implode(', :', array_keys($fields));
-
-            $sql = "INSERT INTO `$table` ($cols) VALUES ($placeholders)";
-            $stmt = $pdo->prepare($sql);
-
-            $stmt->execute($fields);
-
-            echo json_encode(['success' => true]);
-        }
-
-        // --- UPDATE ---
-        if ($action === 'update') {
-
-            if (!isset($input['id'])) {
-                echo json_encode(['error' => 'Hiányzó ID']);
-                exit;
-            }
-
-            $id = $input['id'];
-
-            $set = '';
-            foreach ($fields as $key => $value) {
-                $set .= "$key = :$key, ";
-            }
-            $set = rtrim($set, ', ');
-
-            $sql = "UPDATE `$table` SET $set WHERE id = :id";
-            $stmt = $pdo->prepare($sql);
-
-            $fields['id'] = $id;
-            $stmt->execute($fields);
-
-            echo json_encode(['success' => true]);
-        }
-
-    } catch (PDOException $e) {
-        echo json_encode(['error' => 'Mentési hiba']);
-    }
-
-    exit;
 }
 
-// --- DELETE ---
-if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+// =========================
+// DELETE
+// =========================
+if ($method === 'DELETE') {
 
-    $input = getJsonInput();
-
-    if (!isset($input['id'], $input['table'])) {
-        echo json_encode(['error' => 'Hiányzó adatok']);
-        exit;
-    }
-
-    $id = $input['id'];
     $table = $input['table'];
+    $id = $input['id'];
+    $pk = $input['pk'];
 
-    // védelem
-    if (!preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
-        echo json_encode(['error' => 'Érvénytelen tábla']);
-        exit;
-    }
+    $id = $conn->real_escape_string($id);
 
-    try {
-        $stmt = $pdo->prepare("DELETE FROM `$table` WHERE id = :id");
-        $stmt->execute(['id' => $id]);
+    $sql = "DELETE FROM `$table` WHERE `$pk`='$id'";
+    $conn->query($sql);
 
-        echo json_encode(['success' => true]);
-
-    } catch (PDOException $e) {
-        echo json_encode(['error' => 'Törlési hiba']);
-    }
-
+    echo json_encode(["success" => true]);
     exit;
 }
 
-// --- fallback ---
-echo json_encode(['error' => 'Nem támogatott metódus']);
+echo json_encode(["error" => "Nincs ilyen kérés"]);

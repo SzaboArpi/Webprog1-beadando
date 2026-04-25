@@ -22,6 +22,22 @@ function getJsonInput() {
     return json_decode(file_get_contents("php://input"), true);
 }
 
+// --- GET: táblák listája ---
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['tables'])) {
+
+    try {
+        $stmt = $pdo->query("SHOW TABLES");
+        $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+        echo json_encode($tables);
+
+    } catch (PDOException $e) {
+        echo json_encode(['error' => 'Nem sikerült lekérni a táblákat']);
+    }
+
+    exit;
+}
+
 // --- GET (READ) ---
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
 

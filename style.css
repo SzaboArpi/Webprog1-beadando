@@ -1,6 +1,7 @@
 body{
     background-color: #e1efe6;
     color: #011046 ;
+    font-family: Arial;
 }
 nav{
         background-color:#8884ff;
@@ -62,12 +63,27 @@ td{
     background-color: #49516f;
     color:#e1efe6;
 }
+.form-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
 button{
     background-color: #8884ff;
     color: white ;
     border-color: none;
 }
 input{
+    background-color: #edefee;
+    color: #011046;
+}
+select{
     background-color: #edefee;
     color: #011046;
 }

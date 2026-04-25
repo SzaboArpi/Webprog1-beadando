@@ -1,80 +1,359 @@
 <!DOCTYPE html>
 <html lang="hu">
 <head>
-    <title>Fetch API + MySQL</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+<title>Fetch API CRUD</title>
+
 </head>
+
 <body>
 
-<h2>Szállodák CRUD (MySQL)</h2>
+<h2>Adatbázis kezelő</h2>
 
-<input id="nev" placeholder="Név">
-<input id="bes" placeholder="Besorolás">
-<button onclick="addHotel()">Hozzáadás</button>
+<select id="tableSelect" title="Tábla kiválasztása">
+    <option value="">-- Válassz táblát --</option>
+</select>
 
-<ul id="list"></ul>
+<input type="text" id="searchInput" placeholder="Keresés...">
+
+<!-- FORM FELÜL -->
+<div id="formContainer">
+    <h3 id="formTitle">Új rekord</h3>
+    <div id="dataForm" class="form-row">
+        <div class="form-group">
+            <button onclick="submitForm()">Mentés</button>
+        </div>
+    </div>
+</div>
+
+<!-- TÁBLÁZAT -->
+<table id="dataTable">
+    <thead></thead>
+    <tbody></tbody>
+</table>
+
+<!-- LAPOZÁS -->
+<div id="pagination"></div>
 
 <script>
+const API_URL = 'adatbazis.php';
 
-const API = "http://localhost/api.php";
+let currentTable = '';
+let tableData = [];
+let columns = [];
+let editId = null;
+let sortColumn = null;
+let sortDirection = 1;
+let currentPage = 1;
+const pageSize = 10;
 
-// READ
-function loadData() {
-    fetch(API)
-        .then(res => res.json())
-        .then(data => {
-            const list = document.getElementById("list");
-            list.innerHTML = "";
+const primaryKeys = {
+    helyseg: { name: 'az', auto: true },
+    tavasz: { name: 'sorszam', auto: true },
+    szalloda: { name: 'az', auto: false }
+};
 
-            data.forEach(h => {
-                const li = document.createElement("li");
-                li.innerHTML = `
-                    ${h.nev} (${h.besorolas})
-                    <button onclick="deleteHotel(${h.id})">Törlés</button>
-                    <button onclick="updateHotel(${h.id})">Szerkesztés</button>
-                `;
-                list.appendChild(li);
-            });
-        });
+// INIT
+document.addEventListener('DOMContentLoaded', loadTables);
+
+document.getElementById('tableSelect').addEventListener('change', (e) => {
+    currentTable = e.target.value;
+    currentPage = 1;
+    fetchData();
+});
+
+document.getElementById('searchInput').addEventListener('input', () => {
+    currentPage = 1;
+    renderTable();
+});
+
+// TABLE LISTA
+async function loadTables() {
+    const res = await fetch('adatbazis.php?tables=1');
+    const tables = await res.json();
+
+    const select = document.getElementById('tableSelect');
+
+    tables.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        select.appendChild(opt);
+    });
 }
 
-// CREATE
-function addHotel() {
-    fetch(API, {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            nev: document.getElementById("nev").value,
-            besorolas: document.getElementById("bes").value
-        })
-    }).then(loadData);
+// ADATOK
+async function fetchData() {
+    if (!currentTable) return;
+
+    const res = await fetch(`${API_URL}?table=${currentTable}`);
+    const json = await res.json();
+
+    columns = json.columns;
+    tableData = json.data;
+
+    generateForm();
+    renderTable();
+}
+
+// FORM
+function generateForm() {
+    const form = document.getElementById('dataForm');
+    form.innerHTML = '';
+
+    const pk = primaryKeys[currentTable];
+
+    columns.forEach(col => {
+
+        if (pk && col === pk.name && pk.auto) return;
+
+        const div = document.createElement('div');
+        div.className = 'form-group';
+
+        div.innerHTML = `
+            <label>${col}</label>
+            <input type="text" name="${col}">
+        `;
+
+        form.appendChild(div);
+    });
+
+    const btnDiv = document.createElement('div');
+    btnDiv.className = 'form-group';
+
+    btnDiv.innerHTML = `
+        <label>&nbsp;</label>
+        <button onclick="submitForm()">Mentés</button>
+    `;
+
+    form.appendChild(btnDiv);
+}
+
+// TABLE RENDER
+function renderTable() {
+    const thead = document.querySelector('#dataTable thead');
+    const tbody = document.querySelector('#dataTable tbody');
+
+    thead.innerHTML = '';
+    tbody.innerHTML = '';
+
+    let header = '<tr>';
+    columns.forEach(col => {
+        let arrow = '';
+        if (col === sortColumn) {
+            arrow = sortDirection === 1 ? ' ▲' : ' ▼';
+        }
+
+        header += `<th onclick="sortTable('${col}')">${col}${arrow}</th>`;
+    });
+    header += '<th>Műveletek</th></tr>';
+    thead.innerHTML = header;
+
+    const filter = document.getElementById('searchInput').value.toLowerCase();
+
+    let filtered = tableData.filter(row =>
+        Object.values(row).some(v =>
+            String(v).toLowerCase().includes(filter)
+        )
+    );
+
+    if (sortColumn) {
+    filtered.sort((a, b) => {
+        let valA = a[sortColumn];
+        let valB = b[sortColumn];
+
+        if (!isNaN(valA) && !isNaN(valB)) {
+            return (valA - valB) * sortDirection;
+        }
+
+        return String(valA).localeCompare(String(valB)) * sortDirection;
+    });
+}
+
+    // PAGINATION
+    const start = (currentPage - 1) * pageSize;
+    const paginated = filtered.slice(start, start + pageSize);
+
+    paginated.forEach(row => {
+        let tr = '<tr>';
+
+        columns.forEach(col => {
+            tr += `<td>${row[col]}</td>`;
+        });
+
+        tr += `
+        <td>
+            <button onclick='editRow(${JSON.stringify(row)})'>Szerk</button>
+            <button onclick='deleteRow(${JSON.stringify(row)})'>Törl</button>
+        </td>
+        </tr>`;
+
+        tbody.innerHTML += tr;
+    });
+
+    renderPagination(filtered.length);
+}
+
+// PAGINATION UI
+function renderPagination(total) {
+    const div = document.getElementById('pagination');
+    div.innerHTML = '';
+
+    const totalPages = Math.ceil(total / pageSize);
+    if (totalPages <= 1) return;
+
+    const isFirst = currentPage === 1;
+    const isLast = currentPage === totalPages;
+
+    // ⏮ első
+    div.innerHTML += `
+        <button onclick="goToPage(1)" ${isFirst ? 'disabled' : ''}>
+            ⏮
+        </button>
+    `;
+
+    // ◀ előző
+    div.innerHTML += `
+        <button onclick="goToPage(${currentPage - 1})" ${isFirst ? 'disabled' : ''}>
+            ◀
+        </button>
+    `;
+
+    // --- OLDALSZÁM LOGIKA ---
+    let start = currentPage - 1;
+    let end = currentPage + 1;
+
+    if (start < 1) {
+        start = 1;
+        end = Math.min(3, totalPages);
+    }
+
+    if (end > totalPages) {
+        end = totalPages;
+        start = Math.max(1, totalPages - 2);
+    }
+
+    // bal ...
+    if (start > 1) {
+        div.innerHTML += `<span>...</span>`;
+    }
+
+    // oldalszámok
+    for (let i = start; i <= end; i++) {
+        div.innerHTML += `
+            <button 
+                onclick="goToPage(${i})"
+                ${i === currentPage ? 'disabled' : ''}
+                style="${i === currentPage ? 'font-weight:bold;' : ''}"
+            >
+                ${i}
+            </button>
+        `;
+    }
+
+    // jobb ...
+    if (end < totalPages) {
+        div.innerHTML += `<span>...</span>`;
+    }
+
+    // ▶ következő
+    div.innerHTML += `
+        <button onclick="goToPage(${currentPage + 1})" ${isLast ? 'disabled' : ''}>
+            ▶
+        </button>
+    `;
+
+    // ⏭ utolsó
+    div.innerHTML += `
+        <button onclick="goToPage(${totalPages})" ${isLast ? 'disabled' : ''}>
+            ⏭
+        </button>
+    `;
+}
+
+function goToPage(page) {
+    currentPage = page;
+    renderTable();
+}
+
+// SORT
+function sortTable(col) {
+    if (sortColumn === col) {
+        sortDirection *= -1; // vált ASC/DESC
+    } else {
+        sortColumn = col;
+        sortDirection = 1;
+    }
+
+    renderTable();
+}
+
+// CREATE / UPDATE
+async function submitForm() {
+    const inputs = document.querySelectorAll('#dataForm input');
+    let data = {};
+
+    inputs.forEach(i => data[i.name] = i.value);
+
+    const pk = primaryKeys[currentTable];
+
+    data.table = currentTable;
+
+    if (editId) {
+        data[pk.name] = editId;
+        data.action = 'update';
+    } else {
+        data.action = 'create';
+    }
+
+    const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+
+    const json = await res.json();
+
+    if (json.success) {
+        fetchData();
+        editId = null;
+        document.querySelectorAll('#dataForm input').forEach(i => i.value = '');
+    }
+}
+
+// EDIT
+function editRow(row) {
+    const pk = primaryKeys[currentTable];
+
+    document.querySelectorAll('#dataForm input').forEach(input => {
+        input.value = row[input.name];
+    });
+
+    editId = row[pk.name];
 }
 
 // DELETE
-function deleteHotel(id) {
-    fetch(API + "?id=" + id, {
-        method: "DELETE"
-    }).then(loadData);
-}
+async function deleteRow(row) {
+    const pk = primaryKeys[currentTable];
 
-// UPDATE
-function updateHotel(id) {
-    const newNev = prompt("Új név:");
-    const newBes = prompt("Új besorolás:");
+    if (!confirm('Biztos törlöd?')) return;
 
-    fetch(API + "?id=" + id, {
-        method: "PUT",
-        headers: {"Content-Type": "application/json"},
+    const res = await fetch(API_URL, {
+        method: 'DELETE',
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
-            nev: newNev,
-            besorolas: newBes
+            table: currentTable,
+            id: row[pk.name],
+            pk: pk.name
         })
-    }).then(loadData);
+    });
+
+    const json = await res.json();
+
+    if (json.success) fetchData();
 }
-
-loadData();
-
 </script>
 
 </body>

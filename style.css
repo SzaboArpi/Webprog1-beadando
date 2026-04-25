@@ -56,6 +56,9 @@ th, td {
     text-align: left;
     ;
 }
+#leiras td{
+    width: 50%;
+}
 td{
     background: #aeb7b3;
 }
